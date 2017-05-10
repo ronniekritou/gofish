@@ -1,0 +1,230 @@
+<div ng-controller="BuildCtrl" >
+	<div class="page-header">
+	  <h1>Image Builder</h1>
+	</div>
+
+  <br>
+  <div class="">
+    <div class="card" ng-class="{'card-primary card-inverse': building_step > 0}">
+     <h4 class="card-header" ng-click="setBuildingStep(0)"> Choose Base Image</h4>
+	    <div class="card-block container" ng-show="building_step==0">
+        <div class="btn-group" data-toggle="buttons">
+  			  <label class="btn btn-primary"
+  			    ng-model="selected_base"   
+  			    ng-value="alpine"
+  			    ng-class="{active: selected_base=='alpine'}" 
+  			    ng-click="changeBaseImage('alpine')">
+  			    <input type="radio" >Alpine
+  			  </label>
+  			  <label class="btn btn-primary"
+  			    ng-model="selected_base"   
+  			    ng-value="ubuntu"
+  			    ng-class="{active: selected_base=='ubuntu'}" 
+  			    ng-click="changeBaseImage('ubuntu')">
+  			    <input type="radio" >Ubuntu
+  			  </label>
+  			  <label class="btn btn-primary"
+  			    ng-model="selected_base"   
+  			    ng-value="ubuntu"
+  			    ng-class="{active: selected_base!='ubuntu' && selected_base!='alpine'}" 
+  			    ng-click="selectCustomBaseImage()">
+  			    <input type="radio" >Custom 
+  			  </label>
+			  </div>
+  		  <div ng-show="custom_base_select" >
+  		    <br>
+  		    <div class="card ">
+  		      <h5 class="card-header">Custom Base Image</h5>
+            <div class="card-block offset-0.5" ng-show="building_step==0">
+    		      <label>
+    		  	    Image:Tag <input ng-model="custom_image_name" type="text" >
+    		      </label>
+    		      <input 
+    		        type="button" 
+    		        class="btn btn-success" 
+    		        ng-click="changeBaseImage(custom_image_name)"
+    		        value="Confirm"> 
+            </div>
+          </div>
+  		  </div>
+        <br>
+        <br>
+        <div class="btn btn-primary col-2"
+            ng-click="setBuildingStep(1)">Next
+        </div>
+      </div>
+	  </div>
+	</div>
+
+  <br>
+
+  <!-- START Choose Custom Packages -->
+  <div class="">
+    <div class="card" ng-class="{'card-primary card-inverse': building_step > 1}">
+     <h4 class="card-header" ng-click="setBuildingStep(1)"> Choose Custom Packages</h4>
+      <div class="" ng-show="building_step==1">
+        <div class="card-block offset-0.5" ng-show="building_step==1">
+        <p>For choosing custom packages to include, values must be comma seperated.</p>
+        <div class="col-10">
+          <input class="form-control" type="text" value="">
+        </div>
+        <br>
+        <div class="">
+          <div class="btn btn-primary col-1"
+              ng-click="setBuildingStep(2)">Next
+          </div>
+	      </div>
+      </div>
+	  </div>
+	</div>
+  <!-- END Choose Custom Packages -->
+
+<br>
+
+  <!-- START Choose included go packages -->
+	<div class="">
+    <div class="card" ng-class="{'card-primary card-inverse': building_step > 2}">
+	    <h4 class="card-header" ng-click="setBuildingStep(2)"> Choose Included Go Packages</h4>
+	    <div class="card-block" ng-show="building_step==2">
+        <div class="container" ng-show="selected_go_packages.length > 0" ng-init="showSelectedList=false">
+          <div class="card card-info card-inverse">
+            <div class="card-block">
+              <h4 class="card-title">Go Packages </h4>
+              <input type="checkbox" class="text-muted" ng-model="showSelectedList"> Show Verbose Package List
+              <br>
+              <br>
+              <div class="btn btn-primary col-2"
+                ng-click="setBuildingStep(3)">Next
+              </div>
+              <br>
+              <br>
+              <h6 class="card-text" ng-show="showSelectedList===false">Selected Count : {{selected_go_packages.length}}</h6>
+              <p class="card-text" ng-repeat="selected_package in selected_go_packages" ng-show="showSelectedList===true"> - {{selected_package}}:{{getPackageVersion(selected_package)}}<br></p>
+            </div>
+          </div>
+        </div>
+        <div class="col-3 offset-9">
+          <input type="text" class="form-control" ng-model="go_package_filter" placeholder="Search"/>
+        </div>
+        <br>
+        <div class="card-columns">
+          <div class="card" 
+            ng-class="{'card-success card-inverse': selected_go_packages.indexOf(go_package) > -1}"
+            ng-repeat="go_package in available_go_packages | filter:go_package_filter:strict">
+            <div class="card-block" ng-click="toggleSelection(go_package)">
+              <h4 class="card-title">{{getPackageName(go_package)}}</h4>
+              <h6 class="card-subtitle mb-2 text-muted">{{go_package}}</h6>
+              <p class="card-text">{{getPackageDescription(go_package,getPackageVersion(go_package))}}</p>
+            </div>
+            <div class="card-footer text-muted">
+              <div class="row">
+                <div class="col-5">
+                  <p>Tag : {{getPackageVersion(go_package)}}</p>
+                </div>
+                <div class="btn-group col-1 offset-3" ng-show="hasMoreMultipleVersions(go_package)">
+                  <button type="button" class="btn btn-info dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                  Tag
+                  </button>
+                  <div class="dropdown-menu">
+                    <a class="dropdown-item" ng-click="setPackageVersion(go_package,ver)" href="javascript:void(0);" ng-repeat="ver in getPackageVersions(go_package)">{{ver}}
+                    </a>
+                </div>
+              </div> 
+            </div>   
+          </div>   
+        </div>
+      </div>
+    </div>
+  </div>
+  <!-- END Choose included go packages -->
+  <br>
+
+
+  <div class="">
+    <div class="card" ng-class="{'card-primary card-inverse': building_step > 3}">
+     <h4 class="card-header" ng-click="setBuildingStep(3)" ng-init="usePreviousImageName=false"> Choose Image Name</h4>
+      <div class="" ng-show="building_step==3">
+        <div class="card-block offset-0.5" ng-show="building_step==3">
+        <input type="checkbox" class="text-muted" ng-model="usePreviousImageName"> Use Previous Image Name
+
+        <p>For choosing custom packages to include, values must be comma seperated.</p>
+        <div class="row" ng-show="usePreviousImageName===false">
+          <div class="col-3">
+            Image Name
+            <input class="form-control" type="text" value="">
+          </div>
+          <div class="col-3">
+            Image Tag
+            <input class="form-control" type="text" value="">
+          </div>
+        </div>
+
+        <div class="row" ng-show="usePreviousImageName===true">
+          <div class="col-3">
+            Image Name
+            <select class="form-control" ng-model="image_name">
+              <option ng-repeat="image in previous_image_names" ng-click="image_name=image">{{image}}</option>
+            </select>
+
+            <!-- </div> -->
+          </div>
+          <div class="col-3">
+            Image Tag
+            <input class="form-control" type="text" value="">
+          </div>
+        </div>
+        <br>
+        <div class="">
+          <div class="btn btn-primary col-1"
+              ng-click="setBuildingStep(4)">Next
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <br>
+
+   <div class="">
+    <div class="card" ng-class="{'card-primary card-inverse': building_step > 4}">
+     <h4 class="card-header" ng-click="setBuildingStep(4)" ng-init="usePreviousImageName=false"> Push To Registry</h4>
+      <div class="" ng-show="building_step==4">
+        <div class="card-block container" ng-show="building_step==4">
+        <!-- <input type="checkbox" class="text-muted" ng-model=""> Use Previous Image Name -->
+        <p>Check the different registries you would like to upload our new base image to. </p>
+        <div class="form-check form-check-inline">
+          <label class="form-check-label">
+            <input class="form-check-input" type="checkbox" id="inlineCheckbox1" value="option1"> GCR (Google Cloud Registry)
+          </label>
+        </div>
+        <div class="form-check form-check-inline">
+          <label class="form-check-label">
+            <input class="form-check-input" type="checkbox" id="inlineCheckbox2" value="option2"> Docker Registry
+          </label>
+        </div>
+        <br>
+        <br>
+        <div class="">
+          <div class="btn btn-primary col-2"
+              ng-click="setBuildingStep(5); startBuildProccess()">Finish
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <br>
+
+  <div class="">
+    <div class="card" ng-class="{'card-primary card-inverse': building_step > 5}" ng-show="building_step==5">
+     <h4 class="card-header" ng-click="setBuildingStep(5)">Building...</h4>
+      <div class="" ng-show="building_step==5">
+        <p>{{build_changelog}}</p>
+      </div>
+    </div>
+  </div>    
+  <!-- START Choose Image Name -->
+  <!-- END Choose Custom Packages -->
+
+
+</div>
